@@ -1,45 +1,61 @@
 # Financy - Frontend
 
-Aplicação React para gerenciamento de finanças, consumindo a API GraphQL do backend.
+Nesse projeto front-end será desenvolvida uma aplicação React que, em conjunto com a API, permite o gerenciamento de transações e categorias.
 
 ## Progresso do projeto
 
-### Autenticação
-- [ ] O usuário pode criar uma conta
-- [ ] O usuário pode fazer login
+### Funcionalidades e regras (comuns à API)
 
-### Transações
-- [ ] Criar uma transação
-- [ ] Deletar uma transação
-- [ ] Editar uma transação
-- [ ] Listar todas as transações (apenas as do usuário logado)
+- [ ] O usuário pode criar uma conta e fazer login
+- [ ] O usuário pode ver e gerenciar apenas as transações e categorias criadas por ele
+- [ ] Deve ser possível criar uma transação
+- [ ] Deve ser possível deletar uma transação
+- [ ] Deve ser possível editar uma transação
+- [ ] Deve ser possível listar todas as transações
+- [ ] Deve ser possível criar uma categoria
+- [ ] Deve ser possível deletar uma categoria
+- [ ] Deve ser possível editar uma categoria
+- [ ] Deve ser possível listar todas as categorias
 
-### Categorias
-- [ ] Criar uma categoria
-- [ ] Deletar uma categoria
-- [ ] Editar uma categoria
-- [ ] Listar todas as categorias (apenas as do usuário logado)
+### Regras específicas do front-end
+
+- [ ] Aplicação React usando **GraphQL** para consultas na API e **Vite** como bundler
+- [ ] Seguir o mais fielmente possível o layout do **Figma**
 
 ### Páginas e UI
-- [ ] Página raiz (/) — login quando deslogado, dashboard quando logado
-- [ ] Demais páginas e modais conforme Figma
 
-### Regras
-- [ ] Usuário vê e gerencia apenas suas próprias transações e categorias
-- [ ] Layout seguindo o mais fielmente possível o Figma
+A aplicação possui **6 páginas** e **dois modais** com os formulários (Dialog):
+
+- [ ] Página raiz (**/**):
+  - Tela de login caso o usuário esteja deslogado
+  - Tela dashboard caso o usuário esteja logado
+- [ ] Demais páginas e modais conforme Figma
 
 ## Ferramentas obrigatórias
 
 - TypeScript
 - React
-- Vite (sem framework)
+- Vite sem framework
 - GraphQL
+
+## Ferramentas de uso flexível
+
+- TailwindCSS
+- Shadcn
+- React Query
+- React Hook Form
+- Zod
 
 ## Variáveis de ambiente
 
-Copie `.env.example` para `.env` e preencha:
+É obrigatório que o projeto tenha um arquivo **.env.example** com as chaves necessárias. Copie para `.env` e preencha.
 
-- `VITE_BACKEND_URL` — URL base da API (ex: `http://localhost:4000`)
+- `VITE_BACKEND_URL=`
+
+## Observações importantes
+
+- Começar o projeto pela aba **Style Guide** no Figma (tema, fontes e componentes), para facilitar a criação das páginas.
+- Recomenda-se utilizar bibliotecas que facilitem o desenvolvimento e a manutenção (DX).
 
 ## Como rodar
 

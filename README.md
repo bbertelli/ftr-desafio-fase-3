@@ -1,11 +1,14 @@
 # Financy - Gerenciamento de Finanças
 
-Aplicação FullStack de gerenciamento de finanças pessoais, com gestão de transações e categorias.
+Aplicação FullStack de gerenciamento de finanças: o Financy!  
+O objetivo é criar uma aplicação que permita a **organização de finanças**, com gestão de **transações** e **categorias**.
 
 ## Estrutura do repositório
 
-- **backend/** — API GraphQL (TypeScript, Prisma, SQLite)
-- **frontend/** — Aplicação React (Vite, GraphQL)
+O repositório possui duas subpastas:
+
+- **backend/** — Resolução completa do desafio Back-end (API GraphQL com TypeScript, Prisma e SQLite)
+- **frontend/** — Resolução completa do desafio Front-end (aplicação React com Vite e GraphQL)
 
 ## Como executar
 

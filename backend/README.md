@@ -1,27 +1,23 @@
 # Financy - Backend
 
-API para gerenciamento de finanças (transações e categorias). Desenvolvida com TypeScript, GraphQL, Prisma e SQLite.
+Nesse projeto back-end, será desenvolvida uma API para gerenciar a organização das finanças.
+
+Para esse desafio é esperado o uso do banco de dados **SQLite**.
 
 ## Progresso do projeto
 
-### Autenticação
-- [ ] O usuário pode criar uma conta
-- [ ] O usuário pode fazer login
+### Funcionalidades e regras
 
-### Transações
-- [ ] Criar uma transação
-- [ ] Deletar uma transação
-- [ ] Editar uma transação
-- [ ] Listar todas as transações (apenas as do usuário logado)
-
-### Categorias
-- [ ] Criar uma categoria
-- [ ] Deletar uma categoria
-- [ ] Editar uma categoria
-- [ ] Listar todas as categorias (apenas as do usuário logado)
-
-### Regras
-- [ ] Usuário vê e gerencia apenas suas próprias transações e categorias
+- [ ] O usuário pode criar uma conta e fazer login
+- [ ] O usuário pode ver e gerenciar apenas as transações e categorias criadas por ele
+- [ ] Deve ser possível criar uma transação
+- [ ] Deve ser possível deletar uma transação
+- [ ] Deve ser possível editar uma transação
+- [ ] Deve ser possível listar todas as transações
+- [ ] Deve ser possível criar uma categoria
+- [ ] Deve ser possível deletar uma categoria
+- [ ] Deve ser possível editar uma categoria
+- [ ] Deve ser possível listar todas as categorias
 
 ## Ferramentas obrigatórias
 
@@ -32,10 +28,17 @@ API para gerenciamento de finanças (transações e categorias). Desenvolvida co
 
 ## Variáveis de ambiente
 
-Copie `.env.example` para `.env` e preencha os valores:
+É obrigatório que o projeto tenha um arquivo **.env.example** com as chaves necessárias. Copie para `.env` e preencha os valores.
 
-- `JWT_SECRET` — Chave secreta para assinatura do token JWT
-- `DATABASE_URL` — URL de conexão com o SQLite (ex: `file:./dev.db`)
+- `JWT_SECRET=`
+- `DATABASE_URL=`
+
+Caso adicione variáveis adicionais, inclua-as no .env.example.
+
+## Observações importantes
+
+- Seguir todos os requisitos obrigatórios, principalmente os relacionados às tecnologias (GraphQL).
+- Habilitar **CORS** na aplicação.
 
 ## Como rodar
 
