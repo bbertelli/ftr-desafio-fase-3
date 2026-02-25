@@ -19,6 +19,14 @@ Para esse desafio é esperado o uso do banco de dados **SQLite**.
 - [ ] Deve ser possível editar uma categoria
 - [ ] Deve ser possível listar todas as categorias
 
+### Setup inicial (base técnica)
+
+- [x] Projeto backend inicializado com Node.js + TypeScript
+- [x] Servidor GraphQL configurado
+- [x] Prisma configurado com SQLite
+- [x] Arquivo `.env.example` criado com `JWT_SECRET` e `DATABASE_URL`
+- [x] CORS habilitado na aplicação
+
 ## Ferramentas obrigatórias
 
 - TypeScript
