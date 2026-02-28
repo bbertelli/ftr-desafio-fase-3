@@ -4,7 +4,7 @@ import cors from "cors";
 import express from "express";
 import { ApolloServer } from "@apollo/server";
 import { expressMiddleware } from "@apollo/server/express4";
-import { TransactionType } from "@prisma/client";
+import { Prisma, TransactionType } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import { GraphQLError, GraphQLScalarType, Kind } from "graphql";
 
@@ -14,6 +14,10 @@ import { prisma } from "./lib/prisma";
 type GraphQLContext = {
   userId: string | null;
 };
+
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const MIN_PASSWORD_LENGTH = 6;
+const MAX_PASSWORD_LENGTH = 72;
 
 const DateTimeScalar = new GraphQLScalarType({
   name: "DateTime",
@@ -65,6 +69,94 @@ function getUserIdOrThrow(context: GraphQLContext): string {
   }
 
   return context.userId;
+}
+
+function throwBadUserInput(message: string): never {
+  throw new GraphQLError(message, {
+    extensions: { code: "BAD_USER_INPUT" },
+  });
+}
+
+function normalizeRequiredText(
+  value: string,
+  field: string,
+  options?: { minLength?: number; maxLength?: number },
+): string {
+  const normalized = value.trim();
+  const minLength = options?.minLength ?? 1;
+  const maxLength = options?.maxLength;
+
+  if (normalized.length < minLength) {
+    throwBadUserInput(`${field} must contain at least ${minLength} character(s).`);
+  }
+
+  if (maxLength !== undefined && normalized.length > maxLength) {
+    throwBadUserInput(`${field} must contain at most ${maxLength} character(s).`);
+  }
+
+  return normalized;
+}
+
+function normalizeOptionalText(value?: string | null): string | null | undefined {
+  if (value === undefined) {
+    return undefined;
+  }
+
+  if (value === null) {
+    return null;
+  }
+
+  const normalized = value.trim();
+
+  return normalized.length > 0 ? normalized : null;
+}
+
+function normalizeAndValidateEmail(value: string): string {
+  const normalized = value.trim().toLowerCase();
+
+  if (!EMAIL_REGEX.test(normalized)) {
+    throwBadUserInput("Email is invalid.");
+  }
+
+  return normalized;
+}
+
+function validatePassword(password: string): string {
+  if (password.length < MIN_PASSWORD_LENGTH) {
+    throwBadUserInput(
+      `Password must contain at least ${MIN_PASSWORD_LENGTH} character(s).`,
+    );
+  }
+
+  if (password.length > MAX_PASSWORD_LENGTH) {
+    throwBadUserInput(
+      `Password must contain at most ${MAX_PASSWORD_LENGTH} character(s).`,
+    );
+  }
+
+  return password;
+}
+
+function validateAmount(amount: number): number {
+  if (!Number.isFinite(amount) || amount <= 0) {
+    throwBadUserInput("Amount must be a number greater than zero.");
+  }
+
+  return amount;
+}
+
+function ensureValidDate(value: Date): Date {
+  if (Number.isNaN(value.getTime())) {
+    throwBadUserInput("Date is invalid.");
+  }
+
+  return value;
+}
+
+function isUniqueConstraintError(error: unknown): boolean {
+  return (
+    error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002"
+  );
 }
 
 const typeDefs = `#graphql
@@ -217,7 +309,12 @@ const resolvers = {
       args: { input: { name: string; email: string; password: string } },
     ) => {
       const { name, email, password } = args.input;
-      const normalizedEmail = email.trim().toLowerCase();
+      const normalizedName = normalizeRequiredText(name, "Name", {
+        minLength: 2,
+        maxLength: 80,
+      });
+      const normalizedEmail = normalizeAndValidateEmail(email);
+      const validatedPassword = validatePassword(password);
 
       const existingUser = await prisma.user.findUnique({
         where: { email: normalizedEmail },
@@ -229,13 +326,13 @@ const resolvers = {
         });
       }
 
-      const passwordHash = await bcrypt.hash(password, 10);
+      const hashedPassword = await bcrypt.hash(validatedPassword, 10);
 
       const user = await prisma.user.create({
         data: {
-          name: name.trim(),
+          name: normalizedName,
           email: normalizedEmail,
-          passwordHash,
+          passwordHash: hashedPassword,
         },
       });
 
@@ -249,7 +346,10 @@ const resolvers = {
       args: { input: { email: string; password: string } },
     ) => {
       const { email, password } = args.input;
-      const normalizedEmail = email.trim().toLowerCase();
+      const normalizedEmail = normalizeAndValidateEmail(email);
+      const validatedPassword = normalizeRequiredText(password, "Password", {
+        minLength: 1,
+      });
 
       const user = await prisma.user.findUnique({
         where: { email: normalizedEmail },
@@ -261,7 +361,10 @@ const resolvers = {
         });
       }
 
-      const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
+      const isPasswordValid = await bcrypt.compare(
+        validatedPassword,
+        user.passwordHash,
+      );
 
       if (!isPasswordValid) {
         throw new GraphQLError("Invalid credentials.", {
@@ -280,15 +383,23 @@ const resolvers = {
       context: GraphQLContext,
     ) => {
       const userId = getUserIdOrThrow(context);
+      const categoryName = normalizeRequiredText(args.input.name, "Category name", {
+        minLength: 2,
+        maxLength: 50,
+      });
 
       try {
         return await prisma.category.create({
           data: {
-            name: args.input.name.trim(),
+            name: categoryName,
             userId,
           },
         });
-      } catch {
+      } catch (error) {
+        if (isUniqueConstraintError(error)) {
+          throwBadUserInput("Category name is already in use.");
+        }
+
         throw new GraphQLError("Could not create category.", {
           extensions: { code: "BAD_USER_INPUT" },
         });
@@ -301,9 +412,14 @@ const resolvers = {
     ) => {
       const userId = getUserIdOrThrow(context);
       const { id, name } = args.input;
+      const categoryId = normalizeRequiredText(id, "Category ID");
+      const categoryName = normalizeRequiredText(name, "Category name", {
+        minLength: 2,
+        maxLength: 50,
+      });
 
       const category = await prisma.category.findFirst({
-        where: { id, userId },
+        where: { id: categoryId, userId },
       });
 
       if (!category) {
@@ -312,10 +428,18 @@ const resolvers = {
         });
       }
 
-      return prisma.category.update({
-        where: { id: category.id },
-        data: { name: name.trim() },
-      });
+      try {
+        return await prisma.category.update({
+          where: { id: category.id },
+          data: { name: categoryName },
+        });
+      } catch (error) {
+        if (isUniqueConstraintError(error)) {
+          throwBadUserInput("Category name is already in use.");
+        }
+
+        throw error;
+      }
     },
     deleteCategory: async (
       _parent: unknown,
@@ -323,9 +447,10 @@ const resolvers = {
       context: GraphQLContext,
     ) => {
       const userId = getUserIdOrThrow(context);
+      const categoryId = normalizeRequiredText(args.id, "Category ID");
 
       const deleted = await prisma.category.deleteMany({
-        where: { id: args.id, userId },
+        where: { id: categoryId, userId },
       });
 
       return deleted.count > 0;
@@ -346,10 +471,19 @@ const resolvers = {
     ) => {
       const userId = getUserIdOrThrow(context);
       const { title, amount, type, date, notes, categoryId } = args.input;
+      const normalizedTitle = normalizeRequiredText(title, "Transaction title", {
+        minLength: 2,
+        maxLength: 100,
+      });
+      const validatedAmount = validateAmount(amount);
+      const validatedDate = ensureValidDate(date);
+      const normalizedNotes = normalizeOptionalText(notes);
+      let normalizedCategoryId: string | null = null;
 
       if (categoryId) {
+        normalizedCategoryId = normalizeRequiredText(categoryId, "Category ID");
         const category = await prisma.category.findFirst({
-          where: { id: categoryId, userId },
+          where: { id: normalizedCategoryId, userId },
         });
 
         if (!category) {
@@ -361,13 +495,13 @@ const resolvers = {
 
       return prisma.transaction.create({
         data: {
-          title: title.trim(),
-          amount,
+          title: normalizedTitle,
+          amount: validatedAmount,
           type,
-          date,
-          notes: notes?.trim() || null,
+          date: validatedDate,
+          notes: normalizedNotes ?? null,
           userId,
-          categoryId: categoryId ?? null,
+          categoryId: normalizedCategoryId,
         },
         include: { category: true },
       });
@@ -389,9 +523,10 @@ const resolvers = {
     ) => {
       const userId = getUserIdOrThrow(context);
       const { input } = args;
+      const transactionId = normalizeRequiredText(input.id, "Transaction ID");
 
       const transaction = await prisma.transaction.findFirst({
-        where: { id: input.id, userId },
+        where: { id: transactionId, userId },
       });
 
       if (!transaction) {
@@ -404,10 +539,12 @@ const resolvers = {
         input,
         "categoryId",
       );
+      let normalizedCategoryId: string | null | undefined = undefined;
 
       if (hasCategoryUpdate && input.categoryId) {
+        normalizedCategoryId = normalizeRequiredText(input.categoryId, "Category ID");
         const category = await prisma.category.findFirst({
-          where: { id: input.categoryId, userId },
+          where: { id: normalizedCategoryId, userId },
         });
 
         if (!category) {
@@ -417,17 +554,45 @@ const resolvers = {
         }
       }
 
+      if (hasCategoryUpdate && input.categoryId === null) {
+        normalizedCategoryId = null;
+      }
+
+      const normalizedTitle =
+        input.title !== undefined
+          ? normalizeRequiredText(input.title, "Transaction title", {
+              minLength: 2,
+              maxLength: 100,
+            })
+          : undefined;
+      const validatedAmount =
+        input.amount !== undefined ? validateAmount(input.amount) : undefined;
+      const validatedDate =
+        input.date !== undefined ? ensureValidDate(input.date) : undefined;
+      const normalizedNotes = normalizeOptionalText(input.notes);
+
+      if (
+        normalizedTitle === undefined &&
+        validatedAmount === undefined &&
+        input.type === undefined &&
+        validatedDate === undefined &&
+        normalizedNotes === undefined &&
+        !hasCategoryUpdate
+      ) {
+        throwBadUserInput("At least one field must be provided to update.");
+      }
+
       return prisma.transaction.update({
-        where: { id: input.id },
+        where: { id: transactionId },
         data: {
-          title: input.title?.trim(),
-          amount: input.amount,
+          title: normalizedTitle,
+          amount: validatedAmount,
           type: input.type,
-          date: input.date,
+          date: validatedDate,
           notes: Object.prototype.hasOwnProperty.call(input, "notes")
-            ? input.notes?.trim() || null
+            ? normalizedNotes
             : undefined,
-          categoryId: hasCategoryUpdate ? input.categoryId ?? null : undefined,
+          categoryId: hasCategoryUpdate ? normalizedCategoryId : undefined,
         },
         include: { category: true },
       });
@@ -438,9 +603,10 @@ const resolvers = {
       context: GraphQLContext,
     ) => {
       const userId = getUserIdOrThrow(context);
+      const transactionId = normalizeRequiredText(args.id, "Transaction ID");
 
       const deleted = await prisma.transaction.deleteMany({
-        where: { id: args.id, userId },
+        where: { id: transactionId, userId },
       });
 
       return deleted.count > 0;
