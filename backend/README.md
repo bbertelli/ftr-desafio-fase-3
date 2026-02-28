@@ -57,6 +57,20 @@ npx prisma migrate dev
 npm run dev
 ```
 
+## Seed e DX
+
+Scripts úteis para desenvolvimento:
+
+```bash
+npm run prisma:seed
+npm run prisma:studio
+npm run prisma:reset
+```
+
+- `prisma:seed`: popula dados iniciais para testes manuais
+- `prisma:studio`: abre interface visual do banco
+- `prisma:reset`: reseta o banco local e reaplica migrations
+
 ## Testes
 
 ```bash
