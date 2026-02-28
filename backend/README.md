@@ -56,3 +56,9 @@ npx prisma generate
 npx prisma migrate dev
 npm run dev
 ```
+
+## Validação manual da API
+
+Para facilitar os testes no Playground/GraphiQL, use o kit em:
+
+- `backend/docs/graphql-validation-kit.md`
