@@ -57,6 +57,12 @@ npx prisma migrate dev
 npm run dev
 ```
 
+## Testes
+
+```bash
+npm test
+```
+
 ## Validação manual da API
 
 Para facilitar os testes no Playground/GraphiQL, use o kit em:
