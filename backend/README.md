@@ -57,6 +57,10 @@ npx prisma migrate dev
 npm run dev
 ```
 
+API disponível em:
+
+- `http://localhost:4000/graphql`
+
 ## Seed e DX
 
 Scripts úteis para desenvolvimento:
@@ -82,3 +86,38 @@ npm test
 Para facilitar os testes no Playground/GraphiQL, use o kit em:
 
 - `backend/docs/graphql-validation-kit.md`
+
+## Fluxo de autenticação (JWT)
+
+1. Execute `signup` ou `login` no GraphQL para obter o token JWT.
+2. Envie o token no header `Authorization`:
+
+```json
+{
+  "Authorization": "Bearer SEU_TOKEN_AQUI"
+}
+```
+
+3. A partir disso, execute queries/mutations protegidas (`me`, `categories`, `transactions` e CRUDs).
+
+## Estrutura do backend
+
+- `src/server.ts`: bootstrap do servidor HTTP
+- `src/app.ts`: factory da aplicação Express/Apollo (usada também em testes)
+- `src/graphql/`: schema, context, resolvers e scalars
+- `src/services/`: regras de negócio e acesso a dados
+- `src/utils/`: validações e utilitários
+- `prisma/`: schema, migrations e seed
+
+## Checklist final da entrega (Backend)
+
+- [x] TypeScript
+- [x] GraphQL
+- [x] Prisma
+- [x] SQLite
+- [x] CORS habilitado
+- [x] `.env.example` com `JWT_SECRET` e `DATABASE_URL`
+- [x] Autenticação (`signup` e `login`)
+- [x] CRUD de categorias
+- [x] CRUD de transações
+- [x] Isolamento de dados por usuário autenticado
