@@ -19,7 +19,7 @@ Nesse projeto front-end será desenvolvida uma aplicação React que, em conjunt
 
 ### Regras específicas do front-end
 
-- [ ] Aplicação React usando **GraphQL** para consultas na API e **Vite** como bundler
+- [x] Aplicação React usando **GraphQL** para consultas na API e **Vite** como bundler
 - [ ] Seguir o mais fielmente possível o layout do **Figma**
 
 ### Páginas e UI
