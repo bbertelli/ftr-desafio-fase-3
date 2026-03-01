@@ -6,7 +6,7 @@ Nesse projeto front-end será desenvolvida uma aplicação React que, em conjunt
 
 ### Funcionalidades e regras (comuns à API)
 
-- [ ] O usuário pode criar uma conta e fazer login
+- [x] O usuário pode criar uma conta e fazer login
 - [ ] O usuário pode ver e gerenciar apenas as transações e categorias criadas por ele
 - [ ] Deve ser possível criar uma transação
 - [ ] Deve ser possível deletar uma transação
@@ -26,7 +26,7 @@ Nesse projeto front-end será desenvolvida uma aplicação React que, em conjunt
 
 A aplicação possui **6 páginas** e **dois modais** com os formulários (Dialog):
 
-- [ ] Página raiz (**/**):
+- [x] Página raiz (**/**):
   - Tela de login caso o usuário esteja deslogado
   - Tela dashboard caso o usuário esteja logado
 - [ ] Demais páginas e modais conforme Figma
