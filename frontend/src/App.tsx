@@ -1,11 +1,29 @@
 import { useState, type FormEvent } from "react";
 import { useMutation } from "@apollo/client/react";
 import { LogIn, Mail, UserRound, KeyRound } from "lucide-react";
+import {
+  BrowserRouter,
+  Navigate,
+  Route,
+  Routes,
+} from "react-router-dom";
 
 import "./App.css";
 import logoImage from "./assets/Logo.svg";
+import { AppShell } from "./layout/AppShell";
+import { CategoriesPage } from "./pages/categories/CategoriesPage";
+import { DashboardPage } from "./pages/dashboard/DashboardPage";
+import { ProfilePage } from "./pages/profile/ProfilePage";
+import { TransactionsPage } from "./pages/transactions/TransactionsPage";
 import { LOGIN_MUTATION, SIGNUP_MUTATION } from "./graphql/auth";
-import { clearAuthToken, getAuthToken, setAuthToken } from "./lib/auth";
+import {
+  clearAuthToken,
+  clearAuthUser,
+  getAuthToken,
+  getAuthUser,
+  setAuthToken,
+  setAuthUser,
+} from "./lib/auth";
 import { Button, Card, Input } from "./components/ui";
 
 type AuthPayload = {
@@ -27,6 +45,7 @@ function App() {
   const [password, setPassword] = useState("");
   const [authError, setAuthError] = useState<string | null>(null);
   const [token, setToken] = useState<string | null>(() => getAuthToken());
+  const [user, setUser] = useState(() => getAuthUser());
 
   const [loginMutation, { loading: loginLoading }] =
     useMutation<LoginResponse>(LOGIN_MUTATION);
@@ -48,14 +67,17 @@ function App() {
         });
 
         const newToken = response.data?.login.token;
+        const authUser = response.data?.login.user;
 
-        if (!newToken) {
+        if (!newToken || !authUser) {
           setAuthError("Não foi possível fazer login.");
           return;
         }
 
         setAuthToken(newToken);
+        setAuthUser(authUser);
         setToken(newToken);
+        setUser(authUser);
         return;
       }
 
@@ -66,14 +88,17 @@ function App() {
       });
 
       const newToken = response.data?.signup.token;
+      const authUser = response.data?.signup.user;
 
-      if (!newToken) {
+      if (!newToken || !authUser) {
         setAuthError("Não foi possível criar sua conta.");
         return;
       }
 
       setAuthToken(newToken);
+      setAuthUser(authUser);
       setToken(newToken);
+      setUser(authUser);
     } catch (error) {
       if (error instanceof Error) {
         setAuthError(error.message);
@@ -90,32 +115,31 @@ function App() {
 
   function handleLogout() {
     clearAuthToken();
+    clearAuthUser();
     setToken(null);
+    setUser(null);
     setName("");
     setEmail("");
     setPassword("");
   }
 
-  if (token) {
+  if (token && user) {
     return (
-      <main className="auth-page">
-        <div className="logo-wrapper">
-          <img src={logoImage} alt="Financy" className="logo-icon" />
-        </div>
-
-        <Card className="auth-card">
-          <h1 className="auth-title">Você está logado</h1>
-          <p className="auth-subtitle">
-            Próxima etapa: conectar dashboard, transações e categorias reais.
-          </p>
-          <div className="auth-actions">
-            <Button fullWidth>Ir para dashboard</Button>
-            <Button variant="secondary" fullWidth onClick={handleLogout}>
-              Sair da conta
-            </Button>
-          </div>
-        </Card>
-      </main>
+      <BrowserRouter>
+        <Routes>
+          <Route element={<AppShell user={user} />}>
+            <Route path="/" element={<Navigate to="/dashboard" replace />} />
+            <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/transactions" element={<TransactionsPage />} />
+            <Route path="/categories" element={<CategoriesPage />} />
+            <Route
+              path="/profile"
+              element={<ProfilePage user={user} onLogout={handleLogout} />}
+            />
+            <Route path="*" element={<Navigate to="/dashboard" replace />} />
+          </Route>
+        </Routes>
+      </BrowserRouter>
     );
   }
 
