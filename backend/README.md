@@ -121,3 +121,11 @@ Para facilitar os testes no Playground/GraphiQL, use o kit em:
 - [x] CRUD de categorias
 - [x] CRUD de transações
 - [x] Isolamento de dados por usuário autenticado
+
+## Implementação extra (fora do escopo obrigatório)
+
+Além dos requisitos mínimos do desafio, foi implementada a mutation abaixo para melhorar a experiência de uso da aplicação no frontend:
+
+- `updateProfile(input: UpdateProfileInput!): User!`
+  - Permite atualizar `name`, `email` e `password` do usuário autenticado
+  - Possui validações de entrada e tratamento de conflito de e-mail já cadastrado
