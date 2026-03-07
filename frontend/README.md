@@ -12,10 +12,10 @@ Nesse projeto front-end será desenvolvida uma aplicação React que, em conjunt
 - [ ] Deve ser possível deletar uma transação
 - [ ] Deve ser possível editar uma transação
 - [ ] Deve ser possível listar todas as transações
-- [ ] Deve ser possível criar uma categoria
-- [ ] Deve ser possível deletar uma categoria
-- [ ] Deve ser possível editar uma categoria
-- [ ] Deve ser possível listar todas as categorias
+- [x] Deve ser possível criar uma categoria
+- [x] Deve ser possível deletar uma categoria
+- [x] Deve ser possível editar uma categoria
+- [x] Deve ser possível listar todas as categorias
 
 ### Regras específicas do front-end
 
