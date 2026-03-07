@@ -7,7 +7,7 @@ Nesse projeto front-end será desenvolvida uma aplicação React que, em conjunt
 ### Funcionalidades e regras (comuns à API)
 
 - [x] O usuário pode criar uma conta e fazer login
-- [ ] O usuário pode ver e gerenciar apenas as transações e categorias criadas por ele
+- [x] O usuário pode ver e gerenciar apenas as transações e categorias criadas por ele
 - [x] Deve ser possível criar uma transação
 - [x] Deve ser possível deletar uma transação
 - [x] Deve ser possível editar uma transação
@@ -20,7 +20,7 @@ Nesse projeto front-end será desenvolvida uma aplicação React que, em conjunt
 ### Regras específicas do front-end
 
 - [x] Aplicação React usando **GraphQL** para consultas na API e **Vite** como bundler
-- [ ] Seguir o mais fielmente possível o layout do **Figma**
+- [x] Seguir o mais fielmente possível o layout do **Figma**
 
 ### Páginas e UI
 
@@ -29,7 +29,7 @@ A aplicação possui **6 páginas** e **dois modais** com os formulários (Dialo
 - [x] Página raiz (**/**):
   - Tela de login caso o usuário esteja deslogado
   - Tela dashboard caso o usuário esteja logado
-- [ ] Demais páginas e modais conforme Figma
+- [x] Demais páginas e modais conforme Figma
 
 ## Ferramentas obrigatórias
 

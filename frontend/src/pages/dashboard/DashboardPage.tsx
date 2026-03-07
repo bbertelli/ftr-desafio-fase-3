@@ -38,6 +38,16 @@ const tagColors: CategorySummary["color"][] = [
   "green",
 ];
 
+function formatIsoDateToBr(value: string) {
+  const [year, month, day] = value.slice(0, 10).split("-");
+
+  if (!year || !month || !day) {
+    return value;
+  }
+
+  return `${day}/${month}/${year}`;
+}
+
 export function DashboardPage() {
   const navigate = useNavigate();
   const { data, loading, error } = useQuery<{ transactions: Transaction[] }>(
@@ -177,9 +187,7 @@ export function DashboardPage() {
                 <div key={transaction.id} className="list-row">
                   <div>
                     <p className="list-title">{transaction.title}</p>
-                    <p className="list-subtitle">
-                      {new Date(transaction.date).toLocaleDateString("pt-BR")}
-                    </p>
+                    <p className="list-subtitle">{formatIsoDateToBr(transaction.date)}</p>
                   </div>
                   <Tag color="blue">{transaction.category?.name ?? "Sem categoria"}</Tag>
                   <p className="list-amount">

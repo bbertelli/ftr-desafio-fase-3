@@ -56,6 +56,16 @@ type ModalState =
 
 const categoryTagColors = ["blue", "purple", "pink", "orange", "yellow", "green"] as const;
 
+function formatIsoDateToBr(value: string) {
+  const [year, month, day] = value.slice(0, 10).split("-");
+
+  if (!year || !month || !day) {
+    return value;
+  }
+
+  return `${day}/${month}/${year}`;
+}
+
 export function TransactionsPage() {
   const [modalState, setModalState] = useState<ModalState | null>(null);
   const [search, setSearch] = useState("");
@@ -195,7 +205,7 @@ export function TransactionsPage() {
         title: trimmedTitle,
         amount: parsedAmount,
         type,
-        date: new Date(date).toISOString(),
+        date: `${date}T12:00:00.000Z`,
         notes: notes.trim() ? notes.trim() : null,
         categoryId: categoryId || null,
       };
@@ -357,7 +367,7 @@ export function TransactionsPage() {
                 style: "currency",
                 currency: "BRL",
               });
-              const formattedDate = new Date(transaction.date).toLocaleDateString("pt-BR");
+              const formattedDate = formatIsoDateToBr(transaction.date);
 
               return (
                 <div key={transaction.id} className="transactions-row">
