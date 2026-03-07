@@ -370,6 +370,51 @@
   gap: 12px;
 }
 
+.transactions-filters {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr;
+  gap: 12px;
+}
+
+.transactions-list {
+  margin-top: 14px;
+  display: grid;
+  gap: 10px;
+}
+
+.transactions-row {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) auto auto auto;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid var(--gray-100);
+  border-radius: var(--radius-sm);
+}
+
+.transactions-row__notes {
+  margin-top: 2px;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.transactions-row__amount {
+  display: grid;
+  justify-items: end;
+  gap: 4px;
+}
+
+.transactions-row__actions {
+  display: flex;
+  gap: 6px;
+}
+
+.transactions-modal-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
 @media (max-width: 980px) {
   .summary-grid {
     grid-template-columns: 1fr;
@@ -381,6 +426,22 @@
 
   .category-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .transactions-filters {
+    grid-template-columns: 1fr;
+  }
+
+  .transactions-row {
+    grid-template-columns: 1fr;
+  }
+
+  .transactions-row__amount {
+    justify-items: start;
+  }
+
+  .transactions-modal-grid {
+    grid-template-columns: 1fr;
   }
 
   .list-row {
