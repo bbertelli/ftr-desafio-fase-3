@@ -13,6 +13,7 @@ import {
   deleteTransaction,
   updateTransaction,
 } from "../../services/transactionService";
+import { updateAuthenticatedUser } from "../../services/userService";
 
 export const mutationResolvers = {
   signup: async (
@@ -24,6 +25,22 @@ export const mutationResolvers = {
     _parent: unknown,
     args: { input: { email: string; password: string } },
   ) => login(args.input),
+
+  updateProfile: async (
+    _parent: unknown,
+    args: {
+      input: {
+        name?: string;
+        email?: string;
+        password?: string;
+      };
+    },
+    context: GraphQLContext,
+  ) => {
+    const userId = getUserIdOrThrow(context);
+
+    return updateAuthenticatedUser(args.input, userId);
+  },
 
   createCategory: async (
     _parent: unknown,

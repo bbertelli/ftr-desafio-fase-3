@@ -52,6 +52,12 @@ export const typeDefs = `#graphql
     password: String!
   }
 
+  input UpdateProfileInput {
+    name: String
+    email: String
+    password: String
+  }
+
   input CreateCategoryInput {
     name: String!
   }
@@ -90,6 +96,7 @@ export const typeDefs = `#graphql
   type Mutation {
     signup(input: SignupInput!): AuthPayload!
     login(input: LoginInput!): AuthPayload!
+    updateProfile(input: UpdateProfileInput!): User!
     createCategory(input: CreateCategoryInput!): Category!
     updateCategory(input: UpdateCategoryInput!): Category!
     deleteCategory(id: ID!): Boolean!

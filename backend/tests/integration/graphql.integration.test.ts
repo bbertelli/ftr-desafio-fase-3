@@ -166,6 +166,63 @@ describe("GraphQL integration", () => {
       { title: "Lunch", amount: 20.5 },
     ]);
   });
+
+  it("updates authenticated user profile", async () => {
+    const token = await signupAndGetToken(app, {
+      name: "Alice",
+      email: "alice@example.com",
+      password: "123456",
+    });
+
+    const updateResponse = await request(app)
+      .post(POST_GRAPHQL)
+      .set("Authorization", `Bearer ${token}`)
+      .send({
+        query: `
+          mutation UpdateProfile($input: UpdateProfileInput!) {
+            updateProfile(input: $input) {
+              id
+              name
+              email
+            }
+          }
+        `,
+        variables: {
+          input: {
+            name: "Alice Updated",
+            email: "alice.updated@example.com",
+            password: "abcdef",
+          },
+        },
+      });
+
+    expect(updateResponse.status).toBe(200);
+    expect(updateResponse.body.errors).toBeUndefined();
+    expect(updateResponse.body.data.updateProfile.name).toBe("Alice Updated");
+    expect(updateResponse.body.data.updateProfile.email).toBe(
+      "alice.updated@example.com",
+    );
+
+    const loginResponse = await request(app).post(POST_GRAPHQL).send({
+      query: `
+        mutation Login($input: LoginInput!) {
+          login(input: $input) {
+            token
+          }
+        }
+      `,
+      variables: {
+        input: {
+          email: "alice.updated@example.com",
+          password: "abcdef",
+        },
+      },
+    });
+
+    expect(loginResponse.status).toBe(200);
+    expect(loginResponse.body.errors).toBeUndefined();
+    expect(loginResponse.body.data.login.token).toBeTypeOf("string");
+  });
 });
 
 async function signupAndGetToken(

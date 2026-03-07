@@ -17,6 +17,7 @@ import { ProfilePage } from "./pages/profile/ProfilePage";
 import { TransactionsPage } from "./pages/transactions/TransactionsPage";
 import { LOGIN_MUTATION, SIGNUP_MUTATION } from "./graphql/auth";
 import {
+  type AuthUser,
   clearAuthToken,
   clearAuthUser,
   getAuthToken,
@@ -123,6 +124,11 @@ function App() {
     setPassword("");
   }
 
+  function handleUserUpdated(nextUser: AuthUser) {
+    setAuthUser(nextUser);
+    setUser(nextUser);
+  }
+
   if (token && user) {
     return (
       <BrowserRouter>
@@ -134,7 +140,13 @@ function App() {
             <Route path="/categories" element={<CategoriesPage />} />
             <Route
               path="/profile"
-              element={<ProfilePage user={user} onLogout={handleLogout} />}
+              element={
+                <ProfilePage
+                  user={user}
+                  onLogout={handleLogout}
+                  onUserUpdated={handleUserUpdated}
+                />
+              }
             />
             <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Route>

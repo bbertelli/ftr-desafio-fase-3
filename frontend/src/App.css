@@ -336,6 +336,11 @@
   gap: 12px;
 }
 
+.profile-success {
+  color: var(--success);
+  font-size: 13px;
+}
+
 .category-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
