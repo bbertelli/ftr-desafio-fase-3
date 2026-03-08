@@ -262,7 +262,14 @@ async function createCategory(
           }
         }
       `,
-      variables: { input: { name } },
+      variables: {
+        input: {
+          name,
+          description: `${name} category`,
+          icon: "utensils",
+          color: "orange",
+        },
+      },
     });
 
   expect(response.status).toBe(200);

@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { useMutation } from "@apollo/client/react";
-import { LogIn, Mail, UserRound, KeyRound } from "lucide-react";
+import { Eye, EyeOff, LogIn, Mail, UserRound, UserRoundPlus, KeyRound } from "lucide-react";
 import {
   BrowserRouter,
   Navigate,
@@ -45,8 +45,11 @@ function App() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [authError, setAuthError] = useState<string | null>(null);
+  const [authInfo, setAuthInfo] = useState<string | null>(null);
   const [token, setToken] = useState<string | null>(() => getAuthToken());
   const [user, setUser] = useState(() => getAuthUser());
+  const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(true);
 
   const [loginMutation, { loading: loginLoading }] =
     useMutation<LoginResponse>(LOGIN_MUTATION);
@@ -58,6 +61,7 @@ function App() {
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setAuthError(null);
+    setAuthInfo(null);
 
     try {
       if (mode === "login") {
@@ -79,6 +83,7 @@ function App() {
         setAuthUser(authUser);
         setToken(newToken);
         setUser(authUser);
+        window.history.replaceState(null, "", "/dashboard");
         return;
       }
 
@@ -96,13 +101,16 @@ function App() {
         return;
       }
 
-      setAuthToken(newToken);
-      setAuthUser(authUser);
-      setToken(newToken);
-      setUser(authUser);
+      setMode("login");
+      setPassword("");
+      setAuthInfo("Conta criada com sucesso. Faça login para continuar.");
+      window.history.replaceState(null, "", "/");
     } catch (error) {
       if (error instanceof Error) {
-        setAuthError(error.message);
+        const normalizedError = error.message.includes("Invalid credentials")
+          ? "Credenciais inválidas."
+          : error.message;
+        setAuthError(normalizedError);
       } else {
         setAuthError("Ocorreu um erro inesperado.");
       }
@@ -112,6 +120,8 @@ function App() {
   function switchMode(nextMode: "login" | "signup") {
     setMode(nextMode);
     setAuthError(null);
+    setAuthInfo(null);
+    setShowPassword(false);
   }
 
   function handleLogout() {
@@ -122,6 +132,8 @@ function App() {
     setName("");
     setEmail("");
     setPassword("");
+    setAuthInfo(null);
+    window.history.replaceState(null, "", "/");
   }
 
   function handleUserUpdated(nextUser: AuthUser) {
@@ -195,20 +207,48 @@ function App() {
 
           <Input
             label="Senha"
-            type="password"
+            type={showPassword ? "text" : "password"}
             value={password}
             onChange={(event) => setPassword(event.target.value)}
             placeholder="Digite sua senha"
             leftIcon={<KeyRound size={16} />}
-            helperText={
-              mode === "signup" ? "A senha deve ter no mínimo 6 caracteres." : undefined
+            rightIcon={
+              <button
+                type="button"
+                className="auth-password-toggle"
+                onClick={() => setShowPassword((current) => !current)}
+                aria-label={showPassword ? "Ocultar senha" : "Exibir senha"}
+              >
+                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
             }
+            helperText={
+              mode === "signup" ? "A senha deve ter no mínimo 8 caracteres." : undefined
+            }
+            minLength={mode === "signup" ? 8 : 1}
             required
           />
 
-          {authError ? <p className="auth-error">{authError}</p> : null}
+          {mode === "login" ? (
+            <div className="auth-options">
+              <label className="auth-remember">
+                <input
+                  type="checkbox"
+                  checked={rememberMe}
+                  onChange={(event) => setRememberMe(event.target.checked)}
+                />
+                <span>Lembrar-me</span>
+              </label>
+              <button type="button" className="auth-recover">
+                Recuperar senha
+              </button>
+            </div>
+          ) : null}
 
-          <Button type="submit" fullWidth leftIcon={<LogIn size={16} />} disabled={isSubmitting}>
+          {authError ? <p className="auth-error">{authError}</p> : null}
+          {authInfo ? <p className="profile-success">{authInfo}</p> : null}
+
+          <Button type="submit" fullWidth disabled={isSubmitting}>
             {isSubmitting
               ? "Enviando..."
               : mode === "login"
@@ -218,17 +258,30 @@ function App() {
         </form>
 
         <div className="auth-switch">
+          <div className="auth-divider">
+            <span>ou</span>
+          </div>
           {mode === "login" ? (
             <>
               <span>Ainda não tem uma conta?</span>
-              <Button variant="secondary" fullWidth onClick={() => switchMode("signup")}>
+              <Button
+                variant="secondary"
+                fullWidth
+                leftIcon={<UserRoundPlus size={16} />}
+                onClick={() => switchMode("signup")}
+              >
                 Criar conta
               </Button>
             </>
           ) : (
             <>
               <span>Já tem uma conta?</span>
-              <Button variant="secondary" fullWidth onClick={() => switchMode("login")}>
+              <Button
+                variant="secondary"
+                fullWidth
+                leftIcon={<LogIn size={16} />}
+                onClick={() => switchMode("login")}
+              >
                 Fazer login
               </Button>
             </>

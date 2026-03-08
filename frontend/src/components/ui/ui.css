@@ -7,6 +7,10 @@
 
 .ui-card__header {
   margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
 }
 
 .ui-card__title {
@@ -16,7 +20,7 @@
 }
 
 .ui-card__subtitle {
-  margin: 4px 0 0;
+  margin: 0;
   color: var(--text-secondary);
   font-size: 14px;
 }
@@ -164,6 +168,12 @@
 .ui-input__icon {
   display: inline-flex;
   color: var(--gray-400);
+  margin-right: 8px;
+}
+
+.ui-input__icon:last-child {
+  margin-right: 0;
+  margin-left: 8px;
 }
 
 .ui-input__control {

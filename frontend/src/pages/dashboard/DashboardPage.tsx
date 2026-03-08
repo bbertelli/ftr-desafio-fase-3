@@ -1,10 +1,17 @@
 import { useMemo } from "react";
 import { useQuery } from "@apollo/client/react";
-import { ArrowRight, CircleArrowDown, CircleArrowUp, Plus, Wallet2 } from "lucide-react";
+import {
+  ArrowRight,
+  CircleArrowDown,
+  CircleArrowUp,
+  Plus,
+  Wallet2,
+} from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 
 import { GET_TRANSACTIONS_QUERY } from "../../graphql/transactions";
-import { Button, Card, Tag, TypeBadge } from "../../components/ui";
+import { Button, Card, Tag } from "../../components/ui";
+import { CategoryIcon } from "../../utils/categoryVisual";
 
 type TransactionType = "INCOME" | "EXPENSE";
 
@@ -18,6 +25,8 @@ type Transaction = {
   category: {
     id: string;
     name: string;
+    icon: string;
+    color: "blue" | "purple" | "pink" | "orange" | "yellow" | "green" | "red";
   } | null;
 };
 
@@ -137,7 +146,7 @@ export function DashboardPage() {
       <div className="summary-grid">
         <Card>
           <p className="summary-label">
-            <Wallet2 size={14} /> Saldo total
+            <Wallet2 size={14} className="summary-icon summary-icon--purple" /> Saldo total
           </p>
           <p className="summary-value">
             {balance.toLocaleString("pt-BR", {
@@ -148,7 +157,7 @@ export function DashboardPage() {
         </Card>
         <Card>
           <p className="summary-label">
-            <CircleArrowUp size={14} /> Receitas do mês
+            <CircleArrowUp size={14} className="summary-icon summary-icon--green" /> Receitas do mês
           </p>
           <p className="summary-value">
             {incomeTotal.toLocaleString("pt-BR", {
@@ -159,7 +168,7 @@ export function DashboardPage() {
         </Card>
         <Card>
           <p className="summary-label">
-            <CircleArrowDown size={14} /> Despesas do mês
+            <CircleArrowDown size={14} className="summary-icon summary-icon--red" /> Despesas do mês
           </p>
           <p className="summary-value">
             {expenseTotal.toLocaleString("pt-BR", {
@@ -184,29 +193,47 @@ export function DashboardPage() {
               <p className="list-subtitle">Ainda não existem transações cadastradas.</p>
             ) : (
               recentTransactions.map((transaction) => (
-                <div key={transaction.id} className="list-row">
+                <div key={transaction.id} className="dashboard-transaction-row">
+                  <div
+                    className={`dashboard-category-icon dashboard-category-icon--${
+                      transaction.category?.color ?? "yellow"
+                    }`}
+                  >
+                    <CategoryIcon icon={transaction.category?.icon} />
+                  </div>
                   <div>
                     <p className="list-title">{transaction.title}</p>
                     <p className="list-subtitle">{formatIsoDateToBr(transaction.date)}</p>
                   </div>
-                  <Tag color="blue">{transaction.category?.name ?? "Sem categoria"}</Tag>
+                  <Tag color={transaction.category?.color ?? "yellow"}>
+                    {transaction.category?.name ?? "Sem categoria"}
+                  </Tag>
                   <p className="list-amount">
-                    {transaction.type === "INCOME" ? "+ " : "- "}
                     {transaction.amount.toLocaleString("pt-BR", {
                       style: "currency",
                       currency: "BRL",
                     })}
                   </p>
-                  <TypeBadge type={transaction.type} />
+                  <span
+                    className={`type-indicator${
+                      transaction.type === "INCOME" ? " type-indicator--income" : ""
+                    }`}
+                  >
+                    {transaction.type === "INCOME" ? (
+                      <CircleArrowUp size={18} />
+                    ) : (
+                      <CircleArrowDown size={18} />
+                    )}
+                  </span>
                 </div>
               ))
             )}
           </div>
-          <div style={{ marginTop: 12 }}>
+          <div className="dashboard-add-transaction">
             <Button
-              fullWidth
+              variant="ghost"
               leftIcon={<Plus size={16} />}
-              onClick={() => navigate("/transactions")}
+              onClick={() => navigate("/transactions?new=1")}
             >
               Nova transação
             </Button>
@@ -228,7 +255,7 @@ export function DashboardPage() {
               </p>
             ) : (
               categories.map((category) => (
-                <div key={category.id} className="list-row">
+                <div key={category.id} className="dashboard-category-row">
                   <Tag color={category.color}>{category.label}</Tag>
                   <p className="list-subtitle">{category.items} itens</p>
                   <p className="list-amount">

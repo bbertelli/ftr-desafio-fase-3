@@ -1,6 +1,12 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQuery } from "@apollo/client/react";
-import { Pencil, Plus, Tag as TagIcon, Trash2, UtensilsCrossed } from "lucide-react";
+import {
+  ArrowUpDown,
+  Pencil,
+  Plus,
+  Tag as TagIcon,
+  Trash2,
+} from "lucide-react";
 
 import {
   CREATE_CATEGORY_MUTATION,
@@ -10,10 +16,19 @@ import {
   UPDATE_CATEGORY_MUTATION,
 } from "../../graphql/categories";
 import { Button, Card, IconButton, Input, Modal, Tag } from "../../components/ui";
+import {
+  CategoryIcon,
+  CATEGORY_COLORS,
+  CATEGORY_ICON_OPTIONS,
+} from "../../utils/categoryVisual";
+import type { CategoryColor, CategoryIconName } from "../../utils/categoryVisual";
 
 type Category = {
   id: string;
   name: string;
+  description: string;
+  icon: CategoryIconName;
+  color: CategoryColor;
   createdAt: string;
   updatedAt: string;
 };
@@ -23,8 +38,6 @@ type Transaction = {
   amount: number;
   categoryId: string | null;
 };
-
-const tagColors = ["blue", "purple", "pink", "orange", "yellow", "green"] as const;
 
 type ModalState =
   | { mode: "create" }
@@ -36,6 +49,9 @@ type ModalState =
 export function CategoriesPage() {
   const [modalState, setModalState] = useState<ModalState | null>(null);
   const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
+  const [icon, setIcon] = useState<CategoryIconName>("utensils");
+  const [color, setColor] = useState<CategoryColor>("orange");
   const [formError, setFormError] = useState<string | null>(null);
 
   const { data, loading, error, refetch } = useQuery<{ categories: Category[] }>(
@@ -102,18 +118,27 @@ export function CategoriesPage() {
   function openCreateModal() {
     setFormError(null);
     setName("");
+    setDescription("");
+    setIcon("utensils");
+    setColor("orange");
     setModalState({ mode: "create" });
   }
 
   function openEditModal(category: Category) {
     setFormError(null);
     setName(category.name);
+    setDescription(category.description);
+    setIcon(category.icon);
+    setColor(category.color);
     setModalState({ mode: "edit", category });
   }
 
   function closeModal() {
     setModalState(null);
     setName("");
+    setDescription("");
+    setIcon("utensils");
+    setColor("orange");
     setFormError(null);
   }
 
@@ -121,9 +146,14 @@ export function CategoriesPage() {
     setFormError(null);
 
     const trimmedName = name.trim();
+    const trimmedDescription = description.trim();
 
     if (!trimmedName) {
       setFormError("O título da categoria é obrigatório.");
+      return;
+    }
+    if (!trimmedDescription) {
+      setFormError("A descrição da categoria é obrigatória.");
       return;
     }
 
@@ -131,13 +161,24 @@ export function CategoriesPage() {
       if (modalState?.mode === "create") {
         await createCategory({
           variables: {
-            input: { name: trimmedName },
+            input: {
+              name: trimmedName,
+              description: trimmedDescription,
+              icon,
+              color,
+            },
           },
         });
       } else if (modalState?.mode === "edit") {
         await updateCategory({
           variables: {
-            input: { id: modalState.category.id, name: trimmedName },
+            input: {
+              id: modalState.category.id,
+              name: trimmedName,
+              description: trimmedDescription,
+              icon,
+              color,
+            },
           },
         });
       }
@@ -204,39 +245,55 @@ export function CategoriesPage() {
       </div>
 
       <div className="summary-grid">
-        <Card>
-          <p className="summary-label">
-            <TagIcon size={14} /> Total de categorias
-          </p>
-          <p className="summary-value">{categories.length}</p>
+        <Card className="category-summary-card">
+          <div className="category-summary-row">
+            <span className="summary-label">
+              <TagIcon size={14} />
+            </span>
+            <p className="category-summary-value">{categories.length}</p>
+          </div>
+          <p className="list-subtitle">Total de categorias</p>
         </Card>
-        <Card>
-          <p className="summary-label">
-            <Plus size={14} /> Total de transações
-          </p>
-          <p className="summary-value">{categoryStats.totalTransactions}</p>
+        <Card className="category-summary-card">
+          <div className="category-summary-row">
+            <span className="summary-label">
+              <ArrowUpDown size={14} />
+            </span>
+            <p className="category-summary-value">{categoryStats.totalTransactions}</p>
+          </div>
+          <p className="list-subtitle">Total de transações</p>
         </Card>
-        <Card>
-          <p className="summary-label">
-            <UtensilsCrossed size={14} /> Categoria mais utilizada
-          </p>
-          <p className="summary-value">
-            {categoryStats.mostUsedCategory?.name ?? "Sem dados"}
-          </p>
+        <Card className="category-summary-card">
+          <div className="category-summary-row">
+            <span
+              className={`summary-label category-summary-icon category-summary-icon--${
+                categoryStats.mostUsedCategory?.color ?? "yellow"
+              }`}
+            >
+              <CategoryIcon
+                icon={categoryStats.mostUsedCategory?.icon ?? "utensils"}
+                size={14}
+              />
+            </span>
+            <p className="category-summary-value">
+              {categoryStats.mostUsedCategory?.name ?? "Sem dados"}
+            </p>
+          </div>
+          <p className="list-subtitle">Categoria mais utilizada</p>
         </Card>
       </div>
 
       <div className="category-grid">
-        {categories.map((category, index) => {
-          const color = tagColors[index % tagColors.length];
+        {categories.map((category) => {
           const itemCount =
             categoryStats.transactionCountByCategoryId[category.id] ?? 0;
-          const totalAmount = categoryStats.amountSumByCategoryId[category.id] ?? 0;
 
           return (
             <Card key={category.id} className="category-card">
               <div className="category-card__header">
-                <Tag color={color}>{category.name}</Tag>
+                <div className={`category-card__icon category-card__icon--${category.color}`}>
+                  <CategoryIcon icon={category.icon} />
+                </div>
                 <div className="category-card__actions">
                   <IconButton
                     variant="danger"
@@ -256,13 +313,11 @@ export function CategoriesPage() {
               </div>
 
               <p className="category-card__title">{category.name}</p>
-              <p className="list-subtitle">{itemCount} itens</p>
-              <p className="list-amount">
-                {totalAmount.toLocaleString("pt-BR", {
-                  style: "currency",
-                  currency: "BRL",
-                })}
-              </p>
+              <p className="list-subtitle">{category.description}</p>
+              <div className="category-card__footer">
+                <Tag color={category.color}>{category.name}</Tag>
+                <p className="list-subtitle">{itemCount} itens</p>
+              </div>
             </Card>
           );
         })}
@@ -282,6 +337,48 @@ export function CategoriesPage() {
             placeholder="Ex. Alimentação"
             required
           />
+          <Input
+            label="Descrição"
+            value={description}
+            onChange={(event) => setDescription(event.target.value)}
+            placeholder="Ex. Gastos com refeições"
+            required
+          />
+          <div className="category-picker">
+            <span className="ui-field__label">Ícone</span>
+            <div className="category-picker__grid">
+              {CATEGORY_ICON_OPTIONS.map((iconOption) => (
+                <button
+                  key={iconOption}
+                  type="button"
+                  className={`category-picker__icon${
+                    icon === iconOption ? " category-picker__icon--active" : ""
+                  }`}
+                  onClick={() => setIcon(iconOption)}
+                  aria-label={`Selecionar ícone ${iconOption}`}
+                >
+                  <CategoryIcon icon={iconOption} />
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="category-picker">
+            <span className="ui-field__label">Cor</span>
+            <div className="category-picker__colors">
+              {CATEGORY_COLORS.map((colorOption) => (
+                <button
+                  key={colorOption}
+                  type="button"
+                  className={`category-picker__color category-picker__color--${colorOption}${
+                    color === colorOption ? " category-picker__color--active" : ""
+                  }`}
+                  onClick={() => setColor(colorOption)}
+                  aria-label={`Selecionar cor ${colorOption}`}
+                />
+              ))}
+            </div>
+          </div>
 
           {formError ? <p className="auth-error">{formError}</p> : null}
 

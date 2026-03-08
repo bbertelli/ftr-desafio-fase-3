@@ -15,6 +15,8 @@ export const GET_TRANSACTIONS_QUERY = gql`
       category {
         id
         name
+        icon
+        color
       }
     }
   }
@@ -35,6 +37,8 @@ export const CREATE_TRANSACTION_MUTATION = gql`
       category {
         id
         name
+        icon
+        color
       }
     }
   }
@@ -55,6 +59,8 @@ export const UPDATE_TRANSACTION_MUTATION = gql`
       category {
         id
         name
+        icon
+        color
       }
     }
   }

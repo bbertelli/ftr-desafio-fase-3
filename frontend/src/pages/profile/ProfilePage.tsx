@@ -126,6 +126,7 @@ export function ProfilePage({ user, onLogout, onUserUpdated }: ProfilePageProps)
             type="button"
             variant="secondary"
             fullWidth
+            className="profile-logout"
             leftIcon={<LogOut size={16} />}
             onClick={onLogout}
           >

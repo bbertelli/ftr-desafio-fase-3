@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery } from "@apollo/client/react";
 import {
   ArrowDownUp,
@@ -8,7 +8,6 @@ import {
   Plus,
   Search,
   Trash2,
-  Wallet2,
 } from "lucide-react";
 
 import { GET_CATEGORIES_QUERY } from "../../graphql/categories";
@@ -26,12 +25,15 @@ import {
   Modal,
   Select,
   Tag,
-  TypeBadge,
 } from "../../components/ui";
+import { CategoryIcon } from "../../utils/categoryVisual";
+import { useSearchParams } from "react-router-dom";
 
 type Category = {
   id: string;
   name: string;
+  icon: string;
+  color: "blue" | "purple" | "pink" | "orange" | "yellow" | "green" | "red";
 };
 
 type TransactionType = "INCOME" | "EXPENSE";
@@ -42,7 +44,6 @@ type Transaction = {
   amount: number;
   type: TransactionType;
   date: string;
-  notes: string | null;
   categoryId: string | null;
   category: Category | null;
 };
@@ -53,8 +54,6 @@ type ModalState =
       mode: "edit";
       transaction: Transaction;
     };
-
-const categoryTagColors = ["blue", "purple", "pink", "orange", "yellow", "green"] as const;
 
 function formatIsoDateToBr(value: string) {
   const [year, month, day] = value.slice(0, 10).split("-");
@@ -67,17 +66,18 @@ function formatIsoDateToBr(value: string) {
 }
 
 export function TransactionsPage() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [modalState, setModalState] = useState<ModalState | null>(null);
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState<"ALL" | TransactionType>("ALL");
   const [categoryFilter, setCategoryFilter] = useState<string>("ALL");
+  const [periodFilter, setPeriodFilter] = useState<"ALL" | "MONTH" | "YEAR">("ALL");
   const [formError, setFormError] = useState<string | null>(null);
 
-  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
   const [amount, setAmount] = useState("");
   const [type, setType] = useState<TransactionType>("EXPENSE");
   const [date, setDate] = useState("");
-  const [notes, setNotes] = useState("");
   const [categoryId, setCategoryId] = useState("");
 
   const {
@@ -104,16 +104,6 @@ export function TransactionsPage() {
   const transactions = transactionsData?.transactions ?? [];
   const isSubmitting = createLoading || updateLoading;
 
-  const categoryColorMap = useMemo(() => {
-    return categories.reduce<Record<string, (typeof categoryTagColors)[number]>>(
-      (acc, category, index) => {
-        acc[category.id] = categoryTagColors[index % categoryTagColors.length];
-        return acc;
-      },
-      {},
-    );
-  }, [categories]);
-
   const filteredTransactions = useMemo(() => {
     const normalizedSearch = search.trim().toLowerCase();
 
@@ -121,39 +111,29 @@ export function TransactionsPage() {
       const matchesSearch =
         !normalizedSearch ||
         transaction.title.toLowerCase().includes(normalizedSearch) ||
-        transaction.notes?.toLowerCase().includes(normalizedSearch) ||
         transaction.category?.name.toLowerCase().includes(normalizedSearch);
       const matchesType = typeFilter === "ALL" || transaction.type === typeFilter;
       const matchesCategory =
         categoryFilter === "ALL" || transaction.categoryId === categoryFilter;
+      const transactionDate = new Date(transaction.date);
+      const now = new Date();
+      const matchesPeriod =
+        periodFilter === "ALL" ||
+        (periodFilter === "MONTH" &&
+          transactionDate.getUTCMonth() === now.getUTCMonth() &&
+          transactionDate.getUTCFullYear() === now.getUTCFullYear()) ||
+        (periodFilter === "YEAR" &&
+          transactionDate.getUTCFullYear() === now.getUTCFullYear());
 
-      return matchesSearch && matchesType && matchesCategory;
+      return matchesSearch && matchesType && matchesCategory && matchesPeriod;
     });
-  }, [categoryFilter, search, transactions, typeFilter]);
-
-  const totals = useMemo(() => {
-    return transactions.reduce(
-      (acc, transaction) => {
-        if (transaction.type === "INCOME") {
-          acc.income += transaction.amount;
-        } else {
-          acc.expense += transaction.amount;
-        }
-
-        return acc;
-      },
-      { income: 0, expense: 0 },
-    );
-  }, [transactions]);
-
-  const balance = totals.income - totals.expense;
+  }, [categoryFilter, periodFilter, search, transactions, typeFilter]);
 
   function resetForm() {
-    setTitle("");
+    setDescription("");
     setAmount("");
     setType("EXPENSE");
     setDate("");
-    setNotes("");
     setCategoryId("");
     setFormError(null);
   }
@@ -165,11 +145,10 @@ export function TransactionsPage() {
 
   function openEditModal(transaction: Transaction) {
     setFormError(null);
-    setTitle(transaction.title);
+    setDescription(transaction.title);
     setAmount(String(transaction.amount));
     setType(transaction.type);
     setDate(transaction.date.slice(0, 10));
-    setNotes(transaction.notes ?? "");
     setCategoryId(transaction.categoryId ?? "");
     setModalState({ mode: "edit", transaction });
   }
@@ -179,14 +158,26 @@ export function TransactionsPage() {
     resetForm();
   }
 
+  useEffect(() => {
+    if (searchParams.get("new") !== "1") {
+      return;
+    }
+
+    resetForm();
+    setModalState({ mode: "create" });
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.delete("new");
+    setSearchParams(nextParams, { replace: true });
+  }, [searchParams, setSearchParams]);
+
   async function handleSubmit() {
     setFormError(null);
 
-    const trimmedTitle = title.trim();
+    const trimmedDescription = description.trim();
     const parsedAmount = Number(amount);
 
-    if (!trimmedTitle) {
-      setFormError("O título da transação é obrigatório.");
+    if (!trimmedDescription) {
+      setFormError("A descrição da transação é obrigatória.");
       return;
     }
 
@@ -202,11 +193,10 @@ export function TransactionsPage() {
 
     try {
       const input = {
-        title: trimmedTitle,
+        title: trimmedDescription,
         amount: parsedAmount,
         type,
         date: `${date}T12:00:00.000Z`,
-        notes: notes.trim() ? notes.trim() : null,
         categoryId: categoryId || null,
       };
 
@@ -287,51 +277,17 @@ export function TransactionsPage() {
         </Button>
       </div>
 
-      <div className="summary-grid">
-        <Card>
-          <p className="summary-label">
-            <Wallet2 size={14} /> Saldo total
-          </p>
-          <p className="summary-value">
-            {balance.toLocaleString("pt-BR", {
-              style: "currency",
-              currency: "BRL",
-            })}
-          </p>
-        </Card>
-        <Card>
-          <p className="summary-label">
-            <CircleArrowUp size={14} /> Total de receitas
-          </p>
-          <p className="summary-value">
-            {totals.income.toLocaleString("pt-BR", {
-              style: "currency",
-              currency: "BRL",
-            })}
-          </p>
-        </Card>
-        <Card>
-          <p className="summary-label">
-            <CircleArrowDown size={14} /> Total de despesas
-          </p>
-          <p className="summary-value">
-            {totals.expense.toLocaleString("pt-BR", {
-              style: "currency",
-              currency: "BRL",
-            })}
-          </p>
-        </Card>
-      </div>
-
-      <Card title="Lista de transações" subtitle={`${filteredTransactions.length} itens`}>
+      <Card title="Filtros">
         <div className="transactions-filters">
           <Input
+            label="Buscar"
             value={search}
             onChange={(event) => setSearch(event.target.value)}
-            placeholder="Buscar por título, notas ou categoria"
+            placeholder="Buscar por descrição ou categoria"
             leftIcon={<Search size={16} />}
           />
           <Select
+            label="Tipo"
             value={typeFilter}
             onChange={(event) => setTypeFilter(event.target.value as "ALL" | TransactionType)}
             leftIcon={<ArrowDownUp size={16} />}
@@ -342,6 +298,7 @@ export function TransactionsPage() {
             ]}
           />
           <Select
+            label="Categoria"
             value={categoryFilter}
             onChange={(event) => setCategoryFilter(event.target.value)}
             options={[
@@ -352,17 +309,29 @@ export function TransactionsPage() {
               })),
             ]}
           />
+          <Select
+            label="Período"
+            value={periodFilter}
+            onChange={(event) =>
+              setPeriodFilter(event.target.value as "ALL" | "MONTH" | "YEAR")
+            }
+            options={[
+              { label: "Todo período", value: "ALL" },
+              { label: "Mês atual", value: "MONTH" },
+              { label: "Ano atual", value: "YEAR" },
+            ]}
+          />
         </div>
+      </Card>
 
+      <Card title="Lista de transações" subtitle={`${filteredTransactions.length} itens`}>
         <div className="transactions-list">
           {filteredTransactions.length === 0 ? (
             <p className="list-subtitle">Nenhuma transação encontrada com os filtros atuais.</p>
           ) : (
             filteredTransactions.map((transaction) => {
               const categoryName = transaction.category?.name ?? "Sem categoria";
-              const categoryColor = transaction.categoryId
-                ? categoryColorMap[transaction.categoryId] ?? "blue"
-                : "yellow";
+              const categoryColor = transaction.category?.color ?? "yellow";
               const formattedAmount = transaction.amount.toLocaleString("pt-BR", {
                 style: "currency",
                 currency: "BRL",
@@ -371,40 +340,44 @@ export function TransactionsPage() {
 
               return (
                 <div key={transaction.id} className="transactions-row">
+                  <div className={`dashboard-category-icon dashboard-category-icon--${categoryColor}`}>
+                    <CategoryIcon icon={transaction.category?.icon} />
+                  </div>
                   <div>
                     <p className="list-title">{transaction.title}</p>
                     <p className="list-subtitle">{formattedDate}</p>
-                    {transaction.notes ? (
-                      <p className="transactions-row__notes">{transaction.notes}</p>
-                    ) : null}
                   </div>
 
                   <Tag color={categoryColor}>{categoryName}</Tag>
 
-                  <div className="transactions-row__amount">
-                    <p className="list-amount">
-                      {transaction.type === "INCOME" ? "+ " : "- "}
-                      {formattedAmount}
-                    </p>
-                    <TypeBadge type={transaction.type} />
-                  </div>
+                  <span
+                    className={`type-indicator${
+                      transaction.type === "INCOME" ? " type-indicator--income" : ""
+                    }`}
+                  >
+                    {transaction.type === "INCOME" ? (
+                      <CircleArrowUp size={18} />
+                    ) : (
+                      <CircleArrowDown size={18} />
+                    )}
+                  </span>
 
-                  <div className="transactions-row__actions">
-                    <IconButton
-                      aria-label={`Editar ${transaction.title}`}
-                      onClick={() => openEditModal(transaction)}
-                    >
-                      <Pencil size={16} />
-                    </IconButton>
-                    <IconButton
-                      variant="danger"
-                      aria-label={`Excluir ${transaction.title}`}
-                      onClick={() => handleDelete(transaction)}
-                      disabled={deleteLoading}
-                    >
-                      <Trash2 size={16} />
-                    </IconButton>
-                  </div>
+                  <p className="list-amount">{formattedAmount}</p>
+
+                  <IconButton
+                    variant="danger"
+                    aria-label={`Excluir ${transaction.title}`}
+                    onClick={() => handleDelete(transaction)}
+                    disabled={deleteLoading}
+                  >
+                    <Trash2 size={16} />
+                  </IconButton>
+                  <IconButton
+                    aria-label={`Editar ${transaction.title}`}
+                    onClick={() => openEditModal(transaction)}
+                  >
+                    <Pencil size={16} />
+                  </IconButton>
                 </div>
               );
             })
@@ -415,35 +388,41 @@ export function TransactionsPage() {
       <Modal
         isOpen={Boolean(modalState)}
         title={modalState?.mode === "edit" ? "Editar transação" : "Nova transação"}
-        subtitle="Preencha os dados para salvar sua transação"
+        subtitle="Registre sua despesa ou receita"
         onClose={closeModal}
       >
         <div className="modal-form">
           <Input
-            label="Título"
-            value={title}
-            onChange={(event) => setTitle(event.target.value)}
+            label="Descrição"
+            value={description}
+            onChange={(event) => setDescription(event.target.value)}
             placeholder="Ex. Jantar no restaurante"
             required
           />
-          <div className="transactions-modal-grid">
-            <Input
-              label="Valor"
-              type="number"
-              value={amount}
-              onChange={(event) => setAmount(event.target.value)}
-              placeholder="0,00"
-              required
-            />
-            <Select
-              label="Tipo"
-              value={type}
-              onChange={(event) => setType(event.target.value as TransactionType)}
-              options={[
-                { label: "Entrada", value: "INCOME" },
-                { label: "Saída", value: "EXPENSE" },
-              ]}
-            />
+          <div className="transactions-type-toggle">
+            <span className="ui-field__label">Tipo</span>
+            <div className="transactions-type-toggle__buttons">
+              <button
+                type="button"
+                className={`transactions-type-option transactions-type-option--expense${
+                  type === "EXPENSE" ? " transactions-type-option--active" : ""
+                }`}
+                onClick={() => setType("EXPENSE")}
+              >
+                <CircleArrowDown size={16} />
+                Saída
+              </button>
+              <button
+                type="button"
+                className={`transactions-type-option transactions-type-option--income${
+                  type === "INCOME" ? " transactions-type-option--active" : ""
+                }`}
+                onClick={() => setType("INCOME")}
+              >
+                <CircleArrowUp size={16} />
+                Entrada
+              </button>
+            </div>
           </div>
           <div className="transactions-modal-grid">
             <Input
@@ -453,6 +432,16 @@ export function TransactionsPage() {
               onChange={(event) => setDate(event.target.value)}
               required
             />
+            <Input
+              label="Valor"
+              type="number"
+              value={amount}
+              onChange={(event) => setAmount(event.target.value)}
+              placeholder="0,00"
+              required
+            />
+          </div>
+          <div>
             <Select
               label="Categoria"
               value={categoryId}
@@ -466,12 +455,6 @@ export function TransactionsPage() {
               ]}
             />
           </div>
-          <Input
-            label="Notas"
-            value={notes}
-            onChange={(event) => setNotes(event.target.value)}
-            placeholder="Observações (opcional)"
-          />
 
           {formError ? <p className="auth-error">{formError}</p> : null}
 

@@ -31,6 +31,9 @@ async function main() {
     update: {},
     create: {
       name: "Food",
+      description: "Despesas com alimentação",
+      icon: "utensils",
+      color: "orange",
       userId: user.id,
     },
   });
@@ -45,6 +48,9 @@ async function main() {
     update: {},
     create: {
       name: "Salary",
+      description: "Entradas recorrentes de salário",
+      icon: "briefcase-business",
+      color: "green",
       userId: user.id,
     },
   });

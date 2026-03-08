@@ -44,7 +44,14 @@ export const mutationResolvers = {
 
   createCategory: async (
     _parent: unknown,
-    args: { input: { name: string } },
+    args: {
+      input: {
+        name: string;
+        description: string;
+        icon: string;
+        color: string;
+      };
+    },
     context: GraphQLContext,
   ) => {
     const userId = getUserIdOrThrow(context);
@@ -54,7 +61,15 @@ export const mutationResolvers = {
 
   updateCategory: async (
     _parent: unknown,
-    args: { input: { id: string; name: string } },
+    args: {
+      input: {
+        id: string;
+        name: string;
+        description: string;
+        icon: string;
+        color: string;
+      };
+    },
     context: GraphQLContext,
   ) => {
     const userId = getUserIdOrThrow(context);
